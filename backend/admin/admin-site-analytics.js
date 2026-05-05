@@ -1,0 +1,89 @@
+// Site + analytics feature area
+
+async function loadSite() {
+  const [mr, cr] = await Promise.all([api('/api/maintenance'), api('/api/changelogs')]);
+  if (mr.ok) {
+    const m = await mr.json();
+    el('maint-active').checked = !!m.active;
+    el('maint-msg').value = m.message || '';
+  }
+  if (cr.ok) renderChangelogs(await cr.json());
+}
+
+async function saveMaintenance() {
+  const active = el('maint-active').checked;
+  const message = el('maint-msg').value.trim();
+  const res = await api('/api/admin/maintenance', { method: 'POST', body: JSON.stringify({ active, message }) });
+  ss('maint-ss', res.ok, res.ok ? (active ? '⚠ Maintenance ON' : 'Maintenance off') : 'Error');
+}
+
+function renderChangelogs(logs) {
+  el('changelogs-list').innerHTML =
+    logs
+      .map((l) => {
+        const id = l.id;
+        const entries = (l.entries || []).join('\n');
+        const safeVersion = escHtml(l.version);
+        const safeThanks = escHtml(l.thanks || '');
+        return `
+    <div style="background:#13151e;border:1px solid #2a2d3a;border-radius:5px;padding:16px;margin-bottom:10px;max-width:660px">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+        <span class="hl" style="font-size:15px">${safeVersion}</span>
+        <span style="font-size:12px;color:#666">${l.date ? new Date(l.date).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}) : ''}</span>
+        <button class="btn btn-del" style="margin-left:auto;padding:3px 10px" data-id="${id}" onclick="delChangelog(this)">Delete</button>
+        <span class="ss" id="cl-save-${id}"></span>
+      </div>
+      <div style="margin-bottom:8px">
+        <label style="font-size:11px;color:#666;text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:3px">Bullet Points (one per line)</label>
+        <textarea id="cl-ent-${id}" rows="5" style="width:100%;background:#0f1117;border:1px solid #2a2d3a;color:#ccc;padding:7px;border-radius:3px;font-size:12px;font-family:inherit;resize:vertical">${escHtml(entries)}</textarea>
+      </div>
+      <div style="display:flex;gap:10px;align-items:center">
+        <input id="cl-ver-${id}" class="ifield" type="text" value="${safeVersion}" style="width:90px" placeholder="Version">
+        <input id="cl-thanks-${id}" class="ifield" type="text" value="${safeThanks}" style="width:200px" placeholder="Thanks (optional)">
+        <button class="btn btn-save" data-id="${id}" onclick="saveChangelog(this)">Save</button>
+      </div>
+    </div>`;
+      })
+      .join('') || '<span class="dim">No changelog entries yet.</span>';
+}
+
+async function addChangelog() {
+  const version = v('cl-ver'),
+    thanks = v('cl-thanks');
+  const date = v('cl-date') || new Date().toISOString().slice(0, 10);
+  const entries = el('cl-entries').value.split('\n').map((s) => s.trim()).filter(Boolean);
+  if (!version) return ss('cl-ss', false, 'Need version');
+  const res = await api('/api/admin/changelogs', { method: 'POST', body: JSON.stringify({ version, date, entries, thanks }) });
+  ss('cl-ss', res.ok);
+  if (res.ok) {
+    ['cl-ver', 'cl-date', 'cl-thanks'].forEach((i) => (el(i).value = ''));
+    el('cl-entries').value = '';
+    loadSite();
+  }
+}
+
+async function saveChangelog(btn) {
+  const id = btn.dataset.id;
+  const version = el(`cl-ver-${id}`).value.trim();
+  const thanks = el(`cl-thanks-${id}`).value.trim();
+  const entries = el(`cl-ent-${id}`).value.split('\n').map((s) => s.trim()).filter(Boolean);
+  const res = await api('/api/admin/changelogs/' + id, { method: 'PATCH', body: JSON.stringify({ version, thanks, entries }) });
+  ss(`cl-save-${id}`, res.ok);
+}
+
+async function delChangelog(btn) {
+  if (!confirm('Delete this changelog entry?')) return;
+  const res = await api('/api/admin/changelogs/' + btn.dataset.id, { method: 'DELETE' });
+  if (res.ok) loadSite();
+}
+
+async function loadAnalytics() {
+  const res = await api('/api/analytics');
+  if (!res.ok) return;
+  const d = await res.json();
+  el('stat-online').textContent = d.onlineNow;
+  el('stat-today').textContent = d.todayVisits;
+  el('week-body').innerHTML = d.last7Days
+    .map((r) => `<tr><td>${new Date(r.date).toLocaleDateString('en-GB', { weekday: 'short', month: 'short', day: 'numeric' })}</td><td>${r.visits}</td></tr>`)
+    .join('');
+}

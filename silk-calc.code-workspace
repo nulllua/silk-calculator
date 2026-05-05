@@ -1,0 +1,11 @@
+{
+	"folders": [
+		{
+			"name": "silk-calculator",
+			"path": "."
+		}
+	],
+    "settings": {
+        "liveServer.settings.multiRootWorkspaceName": "silk-calculator"
+    }
+}
