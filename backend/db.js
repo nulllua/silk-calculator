@@ -1,8 +1,8 @@
-const { Pool } = require('pg');
+const { Pool } = require("pg");
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false }
+  ssl: { rejectUnauthorized: false },
 });
 
 async function initSchema() {
@@ -120,10 +120,56 @@ async function initSchema() {
       thanks     VARCHAR(200) NOT NULL DEFAULT '',
       created_at TIMESTAMPTZ  NOT NULL DEFAULT NOW()
     );
+
+    CREATE TABLE IF NOT EXISTS admin_users (
+      id            SERIAL PRIMARY KEY,
+      username      VARCHAR(100) UNIQUE NOT NULL,
+      password_hash TEXT NOT NULL,
+      role          VARCHAR(20) NOT NULL CHECK (role IN ('owner','helper')),
+      active        BOOLEAN NOT NULL DEFAULT true,
+      created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+
+    CREATE TABLE IF NOT EXISTS admin_lock_state (
+      id                 INTEGER PRIMARY KEY DEFAULT 1,
+      is_locked          BOOLEAN NOT NULL DEFAULT true,
+      changed_by_user_id INTEGER,
+      changed_at         TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+
+    CREATE TABLE IF NOT EXISTS admin_permission_requests (
+      id                SERIAL PRIMARY KEY,
+      requester_user_id INTEGER NOT NULL,
+      status            VARCHAR(20) NOT NULL DEFAULT 'pending' CHECK (status IN ('pending','approved','rejected')),
+      note              TEXT NOT NULL DEFAULT '',
+      created_at        TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      resolved_at       TIMESTAMPTZ
+    );
+
+    CREATE TABLE IF NOT EXISTS admin_audit_log (
+      id            BIGSERIAL PRIMARY KEY,
+      actor_user_id INTEGER,
+      actor_role    VARCHAR(20) NOT NULL DEFAULT 'unknown',
+      actor_username VARCHAR(100) NOT NULL DEFAULT 'unknown',
+      entity_type   VARCHAR(100) NOT NULL,
+      entity_id     VARCHAR(200) NOT NULL DEFAULT '',
+      action        VARCHAR(30) NOT NULL,
+      before_json   JSONB,
+      after_json    JSONB,
+      request_json  JSONB,
+      changed_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
   `);
   // Add id column to event_levels if upgrading from old schema
-  await pool.query(`ALTER TABLE event_levels ADD COLUMN IF NOT EXISTS id SERIAL`)
+  await pool
+    .query(`ALTER TABLE event_levels ADD COLUMN IF NOT EXISTS id SERIAL`)
     .catch(() => {});
+
+  await pool.query(
+    `INSERT INTO admin_lock_state (id, is_locked, changed_at)
+     VALUES (1, true, NOW())
+     ON CONFLICT (id) DO NOTHING`,
+  );
 }
 
 module.exports = { pool, initSchema };
