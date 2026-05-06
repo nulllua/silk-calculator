@@ -58,7 +58,7 @@ async function sendChangelogToDiscord(changelog) {
     webhookUrl,
     {
       content: "<@&1498879548551467008>",
-      username: "Silk Road Updates",
+      username: "silkroadcalc.eu UPDATE",
       avatar_url: AVATAR_URL,
       embeds: [embed],
     },
@@ -101,7 +101,7 @@ async function sendMaintenanceToDiscord({ active, message }) {
     webhookUrl,
     {
       content: "<@&1498879548551467008>",
-      username: "Silk Road Announcements",
+      username: "silkroadcalc.eu ANNOUNCEMENT",
       avatar_url: AVATAR_URL,
       embeds: [embed],
     },
