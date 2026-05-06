@@ -27,6 +27,7 @@ app.use(
 );
 app.use(express.json());
 app.use("/admin", express.static(path.join(__dirname, "admin")));
+app.use("/assets", express.static(path.join(__dirname, "../frontend/assets")));
 
 app.get("/health", (_req, res) => res.json({ ok: true }));
 

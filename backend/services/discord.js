@@ -5,6 +5,10 @@ require("dotenv").config();
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const fetchImpl = global.fetch || require("node-fetch");
 
+const AVATAR_URL =
+  (process.env.PUBLIC_URL || "https://silkroadcalc.eu") +
+  "/assets/images/icon.png";
+
 async function postWebhook(webhookUrl, payload, label) {
   if (!webhookUrl) {
     console.warn(`[discord] Missing webhook env for ${label}`);
@@ -43,12 +47,6 @@ async function sendChangelogToDiscord(changelog) {
   if (changelog.entries?.length > 0) {
     embed.description = changelog.entries.map((e) => `- ${e}`).join("\n");
   }
-  if (changelog.date)
-    embed.fields.push({
-      name: "Date",
-      value: String(changelog.date),
-      inline: true,
-    });
   if (changelog.thanks)
     embed.fields.push({
       name: "Thanks",
@@ -61,6 +59,7 @@ async function sendChangelogToDiscord(changelog) {
     {
       content: "<@&1498879548551467008>",
       username: "Silk Road Updates",
+      avatar_url: AVATAR_URL,
       embeds: [embed],
     },
     "changelog",
@@ -84,7 +83,7 @@ async function sendPermissionRequestToDiscord({ username, role, note }) {
 
   await postWebhook(
     webhookUrl,
-    { username: "Admin Lock Guard", embeds: [embed] },
+    { username: "Admin Lock Guard", avatar_url: AVATAR_URL, embeds: [embed] },
     "permission-request",
   );
 }
@@ -103,6 +102,7 @@ async function sendMaintenanceToDiscord({ active, message }) {
     {
       content: "<@&1498879548551467008>",
       username: "Silk Road Announcements",
+      avatar_url: AVATAR_URL,
       embeds: [embed],
     },
     "maintenance",
