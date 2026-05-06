@@ -1,5 +1,10 @@
 require("dotenv").config();
 
+// Discord webhook delivery should not depend on the Node runtime providing global fetch.
+// Some deploy environments run older Node versions, so we fall back to node-fetch.
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const fetchImpl = global.fetch || require("node-fetch");
+
 async function postWebhook(webhookUrl, payload, label) {
   if (!webhookUrl) {
     console.warn(`[discord] Missing webhook env for ${label}`);
@@ -7,15 +12,17 @@ async function postWebhook(webhookUrl, payload, label) {
   }
 
   try {
-    const response = await fetch(webhookUrl, {
+    const response = await fetchImpl(webhookUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     });
 
+    const text = await response.text().catch(() => "");
     if (!response.ok) {
-      const body = await response.text();
-      console.error(`[discord] ${label} failed:`, response.status, body);
+      console.error(`[discord] ${label} failed:`, response.status, text);
+    } else if (process.env.DISCORD_WEBHOOK_DEBUG === "1") {
+      console.log(`[discord] ${label} ok:`, response.status, text);
     }
   } catch (err) {
     console.error(`[discord] ${label} exception:`, err.message);
