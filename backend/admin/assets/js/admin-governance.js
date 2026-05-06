@@ -91,6 +91,17 @@ function inferTabFromEntity(entityType) {
   return "analytics";
 }
 
+function fmtActivityDate(value) {
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return String(value || "");
+  // Example: "May 06 2026"
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "2-digit",
+    year: "numeric",
+  }).format(d);
+}
+
 async function loadActivity() {
   const includeOwner = el("act-show-owner")?.checked ? "1" : "0";
   const res = await api(`/api/admin/activity?includeOwner=${includeOwner}`);
@@ -121,7 +132,7 @@ async function loadActivity() {
       .map(
         (r) => `
       <tr>
-        <td>${escHtml(r.changed_at)}</td>
+        <td>${escHtml(fmtActivityDate(r.changed_at))}</td>
         <td>${escHtml(r.actor_username)}</td>
         <td>${escHtml(r.entity_type)}</td>
         <td>${escHtml(r.action)}</td>

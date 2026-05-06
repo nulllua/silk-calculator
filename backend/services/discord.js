@@ -58,7 +58,11 @@ async function sendChangelogToDiscord(changelog) {
 
   await postWebhook(
     webhookUrl,
-    { username: "Silk Road Updates", embeds: [embed] },
+    {
+      content: "<@&1498879548551467008>",
+      username: "Silk Road Updates",
+      embeds: [embed],
+    },
     "changelog",
   );
 }
@@ -85,7 +89,28 @@ async function sendPermissionRequestToDiscord({ username, role, note }) {
   );
 }
 
+async function sendMaintenanceToDiscord({ active, message }) {
+  const webhookUrl = process.env.DISCORD_ANNOUNCEMENTS_WEBHOOK_URL;
+  const embed = {
+    title: active ? "Silk Road Calculator is under Maintenance" : "Silk Road Calculator is back Online",
+    color: active ? 0xff4444 : 0x00ff88,
+    timestamp: new Date().toISOString(),
+  };
+  if (message) embed.description = message;
+
+  await postWebhook(
+    webhookUrl,
+    {
+      content: "<@&1498879548551467008>",
+      username: "Silk Road Announcements",
+      embeds: [embed],
+    },
+    "maintenance",
+  );
+}
+
 module.exports = {
   sendChangelogToDiscord,
+  sendMaintenanceToDiscord,
   sendPermissionRequestToDiscord,
 };

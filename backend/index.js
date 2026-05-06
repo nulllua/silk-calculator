@@ -7,6 +7,7 @@ const path = require("path");
 const { pool, initSchema } = require("./db");
 const {
   sendChangelogToDiscord,
+  sendMaintenanceToDiscord,
   sendPermissionRequestToDiscord,
 } = require("./services/discord.js");
 const app = express();
@@ -1189,6 +1190,7 @@ app.post(
        ON CONFLICT (key) DO UPDATE SET value=$1`,
         [JSON.stringify({ active: !!active, message: message || "" })],
       );
+      await sendMaintenanceToDiscord({ active: !!active, message: message || "" });
       res.json({ ok: true });
     } catch (e) {
       err(res, e);
