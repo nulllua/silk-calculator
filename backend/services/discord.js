@@ -5,10 +5,6 @@ require("dotenv").config();
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const fetchImpl = global.fetch || require("node-fetch");
 
-const AVATAR_URL =
-  (process.env.PUBLIC_URL || "https://silkroadcalc.eu") +
-  "/assets/images/icon.png";
-
 async function postWebhook(webhookUrl, payload, label) {
   if (!webhookUrl) {
     console.warn(`[discord] Missing webhook env for ${label}`);
@@ -58,8 +54,6 @@ async function sendChangelogToDiscord(changelog) {
     webhookUrl,
     {
       content: "<@&1498879548551467008>",
-      username: "silkroadcalc.eu UPDATE",
-      avatar_url: AVATAR_URL,
       embeds: [embed],
     },
     "changelog",
@@ -83,7 +77,7 @@ async function sendPermissionRequestToDiscord({ username, role, note }) {
 
   await postWebhook(
     webhookUrl,
-    { username: "Admin Lock Guard", avatar_url: AVATAR_URL, embeds: [embed] },
+    { embeds: [embed] },
     "permission-request",
   );
 }
@@ -101,8 +95,6 @@ async function sendMaintenanceToDiscord({ active, message }) {
     webhookUrl,
     {
       content: "<@&1498879548551467008>",
-      username: "silkroadcalc.eu ANNOUNCEMENT",
-      avatar_url: AVATAR_URL,
       embeds: [embed],
     },
     "maintenance",
